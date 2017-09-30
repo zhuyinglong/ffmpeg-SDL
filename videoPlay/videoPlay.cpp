@@ -55,7 +55,7 @@ int main()
 	}
 
 
-	AVPacket* pPacket = (AVPacket *)av_malloc(sizeof(AVPacket));
+	AVPacket* packet = (AVPacket *)av_malloc(sizeof(AVPacket));
 	//Allocate an AVFrame and set its fields to default values.
 	AVFrame *pFrame = av_frame_alloc();
 	AVFrame *pFrameYUV = av_frame_alloc();
@@ -115,7 +115,6 @@ int main()
 
 	SDL_Renderer* sdlRenderer = SDL_CreateRenderer(screen, -1, 0);
 	//IYUV: Y + U + V  (3 planes)  
-	//YV12: Y + V + U  (3 planes)  
 	SDL_Texture* sdlTexture = SDL_CreateTexture(sdlRenderer,
 		SDL_PIXELFORMAT_IYUV,
 		SDL_TEXTUREACCESS_STREAMING,
@@ -129,8 +128,6 @@ int main()
 	sdlRect.h = screen_h;
 
 	int ret = -1;
-	int count = 0;
-
 	SDL_Event event;
 
 	while (1)
@@ -139,16 +136,16 @@ int main()
 		*Technically a packet can contain partial frames or other bits of data,
 		*but ffmpeg's parser ensures that the packets we get contain either complete or multiple frames.
 		*/
-		ret = av_read_frame(pFormatCtx, pPacket);
+		ret = av_read_frame(pFormatCtx, packet);
 		if (ret < 0)
 		{
 			break;
 		}
 
-		if (pPacket->stream_index == video_stream_index)
+		if (packet->stream_index == video_stream_index)
 		{
 			//Supply raw packet data as input to a decoder.
-			ret = avcodec_send_packet(pDecCtx, pPacket);
+			ret = avcodec_send_packet(pDecCtx, packet);
 			if (ret < 0)
 			{
 				av_log(NULL, AV_LOG_ERROR, "Error while sending a packet to the decoder\n");
@@ -190,11 +187,10 @@ int main()
 				SDL_RenderClear(sdlRenderer);
 				SDL_RenderCopy(sdlRenderer, sdlTexture, NULL, NULL);
 				SDL_RenderPresent(sdlRenderer);
-				//SDL End-----------------------  
 			}
 		}
 		// Free the packet that was allocated by av_read_frame
-		av_packet_unref(pPacket);
+		av_packet_unref(packet);
 		SDL_PollEvent(&event);
 		switch (event.type)
 		{
@@ -208,17 +204,13 @@ int main()
 end:
 	//Free the swscaler context swsContext
 	sws_freeContext(pSws_ctx);
-
 	//Free the codec context and everything associated with it and write NULL to the provided pointer.
 	avcodec_free_context(&pDecCtx);
-
 	// Close the video file
 	avformat_close_input(&pFormatCtx);
-
 	//Free the frame and any dynamically allocated objects in it
 	av_frame_free(&pFrame);
 	av_frame_free(&pFrameYUV);
-
 	// Free the RGB image
 	av_free(buffer);
 	return 0;
