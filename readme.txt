@@ -1,0 +1,9 @@
+说明：
+	项目是基于vs2015社区版进行开发的；
+	项目包含ffmpeg（基于3.3.3版本）所需要的win32的头文件，lib及dll库，工程中已配置好，供大家参考。
+    项目包含以下三个工程：
+        1、saveFrame2PPM使用ffmpeg实现将音视频中头5帧存储成PPM格式图像（由于其存储格式简单），该格式可使用PhotoShop等看图软件查看。
+        2、videoPlay实现使用ffmpeg+SDL播放视频。
+        3、audioPlay实现使用ffmpeg+SDL播放音频。
+    注意：
+        项目中所使用的库都是32位版本的，已配置WIN32的DEBUG工程属性，若编译release版本可能需要自己配置。

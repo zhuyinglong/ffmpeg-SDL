@@ -1,5 +1,5 @@
-#ifndef _FFMPEG_H_
-#define _FFMPEG_H_
+#ifndef _FFMPEGSDL_H_
+#define _FFMPEGSDL_H_
 
 //C99整数范围常量. [纯C程序可以不用, 而C++程序必须定义该宏.]
 #define  __STDC_LIMIT_MACROS
