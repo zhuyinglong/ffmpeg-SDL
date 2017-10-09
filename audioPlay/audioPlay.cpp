@@ -84,8 +84,7 @@ int main()
 		printf("Could not open codec.\n");
 		return -1;
 	}
-
-
+	
 	AVPacket* packet = (AVPacket *)av_malloc(sizeof(AVPacket));
 	av_init_packet(packet);
 
