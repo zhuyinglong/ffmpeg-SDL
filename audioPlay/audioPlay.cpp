@@ -2,21 +2,29 @@
 #include "ffmpegsdl.h"
 using namespace std;
 
-#define MAX_AUDIO_FRAME_SIZE 192000 // 1 second of 48khz 32bit audio  
+#define MAX_AUDIO_FRAME_SIZE 192000 // 1 second of 48khz 32bit(4 byte) audio  
 
 
-//Buffer:  
-//|-----------|-------------|  
-//chunk-------pos---len-----|  
 static  Uint8  *audio_chunk;
 static  int  audio_len;
 static  Uint8  *audio_pos;
 
-/* The audio function callback takes the following parameters:
-* stream: A pointer to the audio buffer to be filled
-* len: The length (in bytes) of the audio buffer
+/**
+*  This function is called when the audio device needs more data.
+*
+*  \param userdata An application-specific parameter saved in
+*                  the SDL_AudioSpec structure
+*  \param stream A pointer to the audio data buffer.
+*  \param len    The length of that buffer in bytes.
+*
+*  Once the callback returns, the buffer will no longer be valid.
+*  Stereo samples are stored in a LRLRLR ordering.
+*
+*  You can choose to avoid callbacks and use SDL_QueueAudio() instead, if
+*  you like. Just open your audio device with a NULL callback.
 */
-void  audio_callback(void *udata, Uint8 *stream, int len) {
+void  audio_callback(void *udata, Uint8 *stream, int len)
+{
 	//SDL 2.0  
 	SDL_memset(stream, 0, len);
 	if (audio_len == 0)
@@ -24,6 +32,10 @@ void  audio_callback(void *udata, Uint8 *stream, int len) {
 		return;
 	}
 	len = (len>audio_len ? audio_len : len);   /*  Mix  as  much  data  as  possible  */
+	/**
+	 *  This takes two audio buffers of the playing audio format and mixes
+	 *  them, performing addition, volume adjustment, and overflow clipping.
+	 */
 	SDL_MixAudio(stream, audio_pos, len, SDL_MIX_MAXVOLUME);
 	audio_pos += len;
 	audio_len -= len;
@@ -35,12 +47,14 @@ int main()
 	av_register_all();
 	AVFormatContext *pFormatCtx = avformat_alloc_context();
 	//Open  
-	if (avformat_open_input(&pFormatCtx, pFile, NULL, NULL) != 0) {
+	if (avformat_open_input(&pFormatCtx, pFile, NULL, NULL) != 0) 
+	{
 		printf("Couldn't open input stream.\n");
 		return -1;
 	}
 	// Retrieve stream information  
-	if (avformat_find_stream_info(pFormatCtx, NULL)<0) {
+	if (avformat_find_stream_info(pFormatCtx, NULL)<0) 
+	{
 		printf("Couldn't find stream information.\n");
 		return -1;
 	}
@@ -50,12 +64,14 @@ int main()
 	AVCodec         *pCodec;
 	// Find the first audio stream  
 	int  audio_stream_index = av_find_best_stream(pFormatCtx, AVMEDIA_TYPE_AUDIO, -1, -1, &pCodec, 0);
-	if (audio_stream_index == -1) {
+	if (audio_stream_index == -1) 
+	{
 		printf("Didn't find a audio stream.\n");
 		return -1;
 	}
 
-	if (pCodec == NULL) {
+	if (pCodec == NULL) 
+	{
 		printf("Codec not found.\n");
 		return -1;
 	}
@@ -63,7 +79,8 @@ int main()
 	//Fill the codec context based on the values from the supplied codec
 	avcodec_parameters_to_context(pCodecCtx, pFormatCtx->streams[audio_stream_index]->codecpar);
 	// Open codec  
-	if (avcodec_open2(pCodecCtx, pCodec, NULL)<0) {
+	if (avcodec_open2(pCodecCtx, pCodec, NULL)<0)
+	{
 		printf("Could not open codec.\n");
 		return -1;
 	}
@@ -85,7 +102,8 @@ int main()
 	uint8_t* out_buffer = (uint8_t *)av_malloc(MAX_AUDIO_FRAME_SIZE * 2);
 	AVFrame* pFrame = av_frame_alloc();
 	//SDL------------------ Init  
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER)) {
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER)) 
+	{
 		printf("Could not initialize SDL - %s\n", SDL_GetError());
 		return -1;
 	}
@@ -120,7 +138,7 @@ int main()
 	int index = 0;
 	while (1)
 	{
-		ret = av_read_frame(pFormatCtx, packet);
+		ret = av_read_frame(pFormatCtx, packet);//一个包可能有多个帧
 		if (ret < 0)
 		{
 			break;
@@ -139,13 +157,12 @@ int main()
 			while (ret >= 0)
 			{
 				//Return decoded output data from a decoder.
-				ret = avcodec_receive_frame(pCodecCtx, pFrame);//一个包可能有多个帧
+				ret = avcodec_receive_frame(pCodecCtx, pFrame);
 				if (ret >= 0)
 				{
 					swr_convert(au_convert_ctx, &out_buffer, MAX_AUDIO_FRAME_SIZE, (const uint8_t **)pFrame->data, pFrame->nb_samples);
 					printf("index:%5d\t pts:%lld\t packet size:%d\n", index, packet->pts, packet->size);
 					index++;
-
 				}
 				else if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
 				{
@@ -185,4 +202,3 @@ end:
 
 	return 0;
 }
-
