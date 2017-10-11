@@ -56,6 +56,7 @@ int main()
 
 
 	AVPacket* packet = (AVPacket *)av_malloc(sizeof(AVPacket));
+	av_init_packet(packet);
 	//Allocate an AVFrame and set its fields to default values.
 	AVFrame *pFrame = av_frame_alloc();
 	AVFrame *pFrameYUV = av_frame_alloc();
@@ -188,8 +189,9 @@ int main()
 				SDL_RenderCopy(sdlRenderer, sdlTexture, NULL, NULL);
 				SDL_RenderPresent(sdlRenderer);
 			}
+
 		}
-		// Free the packet that was allocated by av_read_frame
+		// Wipe the packet.		
 		av_packet_unref(packet);
 		SDL_PollEvent(&event);
 		switch (event.type)
@@ -202,6 +204,8 @@ int main()
 		}
 	}
 end:
+	// Free the packet that was allocated by av_read_frame
+	av_packet_free(&packet);
 	//Free the swscaler context swsContext
 	sws_freeContext(pSws_ctx);
 	//Free the codec context and everything associated with it and write NULL to the provided pointer.

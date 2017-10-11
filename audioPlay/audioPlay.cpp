@@ -190,9 +190,12 @@ int main()
 		av_packet_unref(packet);
 	}
 
-	swr_free(&au_convert_ctx);
+	
 
 end:
+	// Free the packet that was allocated by av_read_frame
+	av_packet_free(&packet);
+	swr_free(&au_convert_ctx);
 	SDL_CloseAudio();//Close SDL  
 	SDL_Quit();
 	av_free(out_buffer);

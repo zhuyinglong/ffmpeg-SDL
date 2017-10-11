@@ -65,7 +65,8 @@ int main()
 	}
 
 
-	AVPacket packet;
+	AVPacket* packet = (AVPacket *)av_malloc(sizeof(AVPacket));
+	av_init_packet(packet);
 	//Allocate an AVFrame and set its fields to default values.
 	AVFrame *pFrame = av_frame_alloc();
 	AVFrame *pFrameRGB = av_frame_alloc();
@@ -105,16 +106,16 @@ int main()
 		 *Technically a packet can contain partial frames or other bits of data, 
 		 *but ffmpeg's parser ensures that the packets we get contain either complete or multiple frames.
 		 */
-		ret = av_read_frame(pFormatCtx, &packet);
+		ret = av_read_frame(pFormatCtx, packet);
 		if (ret < 0)
 		{
 			break;
 		}
 
-		if (packet.stream_index == video_stream_index) 
+		if (packet->stream_index == video_stream_index) 
 		{
 			//Supply raw packet data as input to a decoder.
-			ret = avcodec_send_packet(pDecCtx, &packet);
+			ret = avcodec_send_packet(pDecCtx, packet);
 			if (ret < 0) 
 			{
 				av_log(NULL, AV_LOG_ERROR, "Error while sending a packet to the decoder\n");
@@ -150,24 +151,21 @@ int main()
 				
 			}
 		}
-		// Free the packet that was allocated by av_read_frame
-		av_packet_unref(&packet);
+		// Wipe the packet.		
+		av_packet_unref(packet);
 	}
 end:
-
+	// Free the packet that was allocated by av_read_frame
+	av_packet_free(&packet);
 	//Free the swscaler context swsContext
 	sws_freeContext(sws_ctx);
-
 	//Free the codec context and everything associated with it and write NULL to the provided pointer.
 	avcodec_free_context(&pDecCtx);
-
 	// Close the video file
 	avformat_close_input(&pFormatCtx);
-
 	//Free the frame and any dynamically allocated objects in it
 	av_frame_free(&pFrame);
 	av_frame_free(&pFrameRGB);
-
 	// Free the RGB image
 	av_free(buffer);
 	return 0;
