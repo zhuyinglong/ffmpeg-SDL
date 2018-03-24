@@ -5,5 +5,6 @@
         1、saveFrame2PPM使用ffmpeg实现将音视频中头5帧存储成PPM格式图像（由于其存储格式简单），该格式可使用PhotoShop等看图软件查看。
         2、videoPlay实现使用ffmpeg+SDL播放视频。
         3、audioPlay实现使用ffmpeg+SDL播放音频。
+        4、player简化ffplay实现播放器。
     注意：
         项目中所使用的库都是32位版本的，已配置WIN32的DEBUG工程属性，若编译release版本可能需要自己配置。
